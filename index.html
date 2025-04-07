@@ -110,7 +110,6 @@
         <input type="number" id="nbEnfants" value="0" min="0">
         <label for="tauxImpot">Taux d'imposition à la source (%)</label>
         <input type="number" id="tauxImpot" value="0" min="0" max="100" step="0.1">
-
         <h2>Autres éléments de rémunération</h2>
         <label for="prime">Prime (€)</label>
         <input type="number" id="prime" value="0" min="0" step="0.01">
@@ -120,7 +119,9 @@
         <input type="number" id="majorationHS" value="25" min="0" max="100" step="0.1">
         <label for="avantageNature">Avantage en nature (€)</label>
         <input type="number" id="avantageNature" value="0" min="0" step="0.01">
-
+        <h2>Personnalisation du PDF</h2>
+        <label for="couleurPrincipale">Couleur principale (#HEX)</label>
+        <input type="color" id="couleurPrincipale" value="#bee3f8">
         <button onclick="genererPDF()">Générer la fiche de paie</button>
     </div>
     <!-- Scripts placés à la fin du body -->
@@ -198,13 +199,11 @@
                     alert("Le salaire brut doit être un nombre positif.");
                     return false;
                 }
-
                 // Validation des nouveaux champs
                 const prime = parseFloat(document.getElementById("prime").value) || 0;
                 const heuresSupplementaires = parseFloat(document.getElementById("heuresSupplementaires").value) || 0;
                 const majorationHS = parseFloat(document.getElementById("majorationHS").value) || 0;
                 const avantageNature = parseFloat(document.getElementById("avantageNature").value) || 0;
-
                 if (isNaN(prime) || prime < 0) {
                     alert("La prime doit être un nombre positif.");
                     return false;
@@ -221,7 +220,6 @@
                     alert("L'avantage en nature doit être un nombre positif.");
                     return false;
                 }
-
                 return true;
             }
             // Calcul de l'ancienneté
@@ -282,13 +280,12 @@
                 const statutMarital = parseInt(document.getElementById("statutMarital").value);
                 const nbEnfants = parseInt(document.getElementById("nbEnfants").value);
                 const tauxImpot = parseFloat(document.getElementById("tauxImpot").value) || 0;
-
                 // Nouveaux champs ajoutés
                 const prime = parseFloat(document.getElementById("prime").value) || 0;
                 const heuresSupplementaires = parseFloat(document.getElementById("heuresSupplementaires").value) || 0;
                 const majorationHS = parseFloat(document.getElementById("majorationHS").value) || 0;
                 const avantageNature = parseFloat(document.getElementById("avantageNature").value) || 0;
-
+                const couleurPrincipale = document.getElementById("couleurPrincipale").value; // Couleur personnalisée
                 // Calculs
                 const anciennete = calculerAnciennete(dateEntree, dateFin);
                 // Extraction du mois et de l'année à partir de la date de début
@@ -300,7 +297,6 @@
                     prime +
                     (heuresSupplementaires * tauxHoraire * (1 + majorationHS / 100)) +
                     avantageNature;
-
                 // Calcul des cotisations avec prise en compte du plafond SS
                 const cotisations = {
                     salariales: {
@@ -331,7 +327,6 @@
                 const netImposable = salaireBrutProrata - cotisations.salariales.csgDeductible - totalSalarial + cotisations.salariales.csgNonDeductible;
                 const impotRevenu = (netImposable * (tauxImpot / 100)) || 0;
                 const netAPayer = salaireBrutProrata - totalSalarial - impotRevenu;
-
                 // Génération du PDF
                 const doc = new jsPDF();
                 doc.setFontSize(14);
@@ -353,7 +348,7 @@
                 ];
                 const yEntrepriseStart = 23;
                 const yEntrepriseHeight = 35;
-                doc.setFillColor(235, 248, 255);
+                doc.setFillColor(...hexToRgb(couleurPrincipale)); // Appliquer la couleur personnalisée
                 doc.roundedRect(15, yEntrepriseStart, 80, yEntrepriseHeight, 3, 3, "F"); // Largeur réduite à 80
                 let yPositionEntreprise = yEntrepriseStart + (yEntrepriseHeight / 3) - ((infosEntreprise.length * 2) / 3);
                 infosEntreprise.forEach((line) => {
@@ -374,7 +369,7 @@
                 ];
                 const ySalarieStart = 23;
                 const ySalarieHeight = 35;
-                doc.setFillColor(235, 248, 255);
+                doc.setFillColor(...hexToRgb(couleurPrincipale)); // Appliquer la couleur personnalisée
                 doc.roundedRect(115, ySalarieStart, 80, ySalarieHeight, 3, 3, "F"); // Largeur réduite à 80 et position ajustée
                 let yPositionSalarie = ySalarieStart + (ySalarieHeight / 3) - ((infosSalarie.length * 2) / 3);
                 infosSalarie.forEach((line) => {
@@ -387,10 +382,10 @@
                 doc.setFont(undefined, 'bold');
                 doc.setFontSize(10);
                 doc.setTextColor(43, 108, 176);
-                doc.text("Période :", 105, yPositionEntreprise + 6, { align: 'center' });
+                doc.text("Période :", 105, yPositionEntreprise + 7, { align: 'center' });
                 doc.setFontSize(9);
                 doc.setTextColor(0, 0, 0);
-                doc.text(`${dateDebut} au ${dateFin}`, 105, yPositionEntreprise + 12, { align: 'center' });
+                doc.text(`${dateDebut} au ${dateFin}`, 105, yPositionEntreprise + 13, { align: 'center' });
                 doc.setFont(undefined, 'normal');
                 // Tableau des cotisations
                 const lignesPaie = [
@@ -437,7 +432,7 @@
                 const tableStartY = yPositionEntreprise + 16;
                 // Ajout d'un rectangle pour l'en-tête du tableau centré
                 doc.setDrawColor(43, 108, 176);
-                doc.setFillColor(43, 108, 176);
+                doc.setFillColor(...hexToRgb(couleurPrincipale)); // Appliquer la couleur personnalisée
                 doc.roundedRect(startX, tableStartY, totalTableWidth, 7, 2, 2, "FD"); // En-tête centré
                 // Ajout du tableau des cotisations centré
                 doc.autoTable({
@@ -454,7 +449,7 @@
                         textColor: [0, 0, 0]
                     },
                     headStyles: {
-                        fillColor: [235, 248, 255],
+                        fillColor: hexToRgb(couleurPrincipale), // Appliquer la couleur personnalisée
                         textColor: [0, 0, 0],
                         fontSize: 7,
                         cellPadding: 2,
@@ -469,13 +464,22 @@
                         5: { cellWidth: columnWidths[5], halign: 'right' }
                     },
                     bodyStyles: { valign: 'middle' },
-                    alternateRowStyles: { fillColor: [235, 248, 255] },
+                    alternateRowStyles: { fillColor: hexToRgb(couleurPrincipale) }, // Appliquer la couleur personnalisée
                     tableWidth: 'fixed' // Fixer la largeur totale du tableau
                 });
                 // Sauvegarde du PDF
                 doc.save("bulletin_paie_" + nomSalarie.replace(/\s+/g, '_') + ".pdf");
                 alert("Fiche de paie générée avec succès !");
             };
+
+            // Fonction utilitaire pour convertir une couleur HEX en RVB
+            function hexToRgb(hex) {
+                const bigint = parseInt(hex.slice(1), 16);
+                const r = (bigint >> 16) & 255;
+                const g = (bigint >> 8) & 255;
+                const b = bigint & 255;
+                return [r, g, b];
+            }
         };
     </script>
 </body>
